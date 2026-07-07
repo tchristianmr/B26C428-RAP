@@ -1,0 +1,117 @@
+@Metadata.layer: #CORE
+@UI: {
+    headerInfo: {
+        typeName:       'Booking',
+        typeNamePlural: 'Bookings',
+        title:          { type: #STANDARD, value: 'BookingID' }
+    }
+}
+annotate entity ZC_BOOKING_428CMR
+    with 
+{
+    @UI.facet: [
+        {
+            id:       'GeneralSection',
+            purpose:  #STANDARD,
+            type:     #COLLECTION,
+            label:    'General Information',
+            position: 10
+        },
+        {
+            id:       'Booking',
+            purpose:  #STANDARD,
+            type:     #IDENTIFICATION_REFERENCE,
+            label:    'Booking',
+            parentId: 'GeneralSection',
+            position: 10
+        },
+        {
+            id:              'Flight',
+            purpose:         #STANDARD,
+            type:            #FIELDGROUP_REFERENCE,
+            label:           'Flight',
+            targetQualifier: 'Flight',
+            parentId:        'GeneralSection',
+            position:        20
+        },
+        {
+            id:            'BookingSupplement',
+            purpose:       #STANDARD,
+            type:          #LINEITEM_REFERENCE,
+            label:         'Booking Supplements',
+            targetElement: '_BookingSupplement',
+            position:      20
+        }
+    ]
+
+    @UI.hidden: true
+    BookingUUID;
+
+    @UI.hidden: true
+    TravelUUID;
+
+    @EndUserText.label: 'Booking ID'
+    @UI: {
+        lineItem:       [{ position: 10 }],
+        identification: [{ position: 10 }]
+    }
+    BookingID;
+
+    @EndUserText.label: 'Booking Date'
+    @UI: {
+        lineItem:       [{ position: 20 }],
+        identification: [{ position: 20 }]
+    }
+    BookingDate;
+
+    @EndUserText.label: 'Customer ID'
+    @UI: {
+        lineItem:       [{ position: 30 }],
+        identification: [{ position: 30 }],
+        textArrangement: #TEXT_ONLY
+    }
+    CustomerID;
+
+    @EndUserText.label: 'Airline ID'
+    @UI: {
+        lineItem:   [{ position: 40 }],
+        fieldGroup: [{ qualifier: 'Flight', position: 10 }]
+    }
+    AirlineID;
+
+    @EndUserText.label: 'Connection ID'
+    @UI: {
+        lineItem:   [{ position: 50 }],
+        fieldGroup: [{ qualifier: 'Flight', position: 20 }]
+    }
+    ConnectionId;
+
+    @EndUserText.label: 'Flight Date'
+    @UI: {
+        lineItem:   [{ position: 60 }],
+        fieldGroup: [{ qualifier: 'Flight', position: 30 }]
+    }
+    FlightDate;
+
+    @EndUserText.label: 'Currency Code'
+    @UI.hidden: true
+    CurrencyCode;
+
+    @EndUserText.label: 'Flight Price'
+    @UI: {
+        lineItem:   [{ position: 70 }],
+        fieldGroup: [{ qualifier: 'Flight', position: 40 }]
+    }
+    FlightPrice;
+
+    @EndUserText.label: 'Booking Status'
+    @UI: {
+        lineItem:        [{ position: 80 }],
+        identification:  [{ position: 40 }]
+    }
+    BookingStatus;
+   
+
+    @UI.hidden: true
+    LocalLastChangedAt;
+}

@@ -1,0 +1,110 @@
+@Metadata.layer: #CORE
+@UI: { 
+    headerInfo : { typeName: 'Travel',
+                   typeNamePlural: 'Travels',
+    title: { value: 'TravelID' },
+    description: { value: 'Description' }
+    },
+    presentationVariant: [{ 
+        sortOrder: [{ by: 'TravelID', direction: #DESC }],
+        visualizations: [{ type: #AS_LINEITEM  }]
+    }]
+}
+annotate entity ZC_TRAVEL_428CMR with
+{
+  //-------
+  //Facets
+  //-------
+  @UI.facet: [
+   { id: 'GeneralSection', purpose: #STANDARD, type: #COLLECTION, label: 'General Information', position: 10 },
+   { id: 'Travel', purpose: #STANDARD, type: #IDENTIFICATION_REFERENCE, label: 'Travel', parentId: 'GeneralSection', position: 10 },
+   { id: 'Participants' , purpose: #STANDARD, type: #FIELDGROUP_REFERENCE, label: 'Participants', targetQualifier: 'Participants', parentId: 'GeneralSection', position: 20 },
+   { id: 'Dates', purpose: #STANDARD, type: #FIELDGROUP_REFERENCE, label: 'Dates', targetQualifier: 'Dates', parentId: 'GeneralSection', position: 30 },
+   { id: 'Pricing', purpose: #STANDARD, type: #FIELDGROUP_REFERENCE, label: 'Pricing', targetQualifier: 'Pricing', parentId: 'GeneralSection', position: 40 },
+   { id: 'Booking', purpose: #STANDARD, type: #LINEITEM_REFERENCE, label: 'Booking', targetElement: '_Booking', position: 20 }
+  ]  
+  
+  //-------
+  //Campos
+  //-------  
+  @EndUserText.label: 'Travel UUID'
+  @UI.hidden: true
+  TravelUUID;
+  @EndUserText.label: 'Travel ID'
+  @UI:{
+       lineItem: [{ position: 10 },
+                  { type: #FOR_ACTION, dataAction: 'acceptTravel', label: 'Accept Travel' },
+                  { type: #FOR_ACTION, dataAction: 'rejectTravel', label: 'Reject Travel' }],
+       identification: [{ position: 10 },
+                        { type: #FOR_ACTION, dataAction: 'acceptTravel', label: 'Accept Travel' },
+                        { type: #FOR_ACTION, dataAction: 'rejectTravel', label: 'Reject Travel' } ]
+  }
+  TravelID;
+  @EndUserText.label: 'Agency ID'
+  @UI:{
+       lineItem: [{ position: 20, label: 'Agency' }],
+       selectionField: [{ position: 10 }],
+       textArrangement: #TEXT_ONLY,
+       fieldGroup: [{ position: 10, qualifier: 'Participants' }]
+  }
+  AgencyID;
+  @EndUserText.label: 'Customer ID'
+  @UI:{
+       lineItem: [{ position:30, label: 'Customer' }],
+       selectionField: [{ position: 20 }],
+       fieldGroup: [{ position: 20, qualifier: 'Participants' }]
+  }
+  CustomerID;
+  @EndUserText.label: 'Begin Date'
+  @UI:{
+       lineItem: [{ position: 40 }],
+       fieldGroup: [{ position: 10, qualifier: 'Dates' }]      
+  }
+  BeginDate;
+  @EndUserText.label: 'End Date'
+  @UI:{
+       lineItem: [{ position: 50 }],
+       fieldGroup: [{ position: 20, qualifier: 'Dates' }]
+  }
+  EndDate;
+  @EndUserText.label: 'Currency Code'
+  @UI: {
+      selectionField: [{ position: 30 }]
+  }      
+  CurrencyCode;
+  @EndUserText.label: 'Booking Fee'
+  @UI:{
+       lineItem: [{ position: 60  }],
+       fieldGroup: [{ position: 10, qualifier: 'Pricing' }]
+  }
+  BookingFee;
+  @EndUserText.label: 'Total Price'
+  @UI:{
+       lineItem: [{ position: 70 }],
+       fieldGroup: [{ position: 20, qualifier: 'Pricing' }]
+  }
+  TotalPrice;
+  @EndUserText.label: 'Description'
+  @UI: { identification: [{ position: 20 }],
+  multiLineText: true } 
+  Description;
+  @EndUserText.label: 'Overall Status'
+  @UI:{
+       lineItem: [{ position: 80 , cssDefault.width: '10em', criticality: 'OverallStatusCriticality' }],
+       selectionField: [{ position: 40 }],
+       identification: [{ position: 30, criticality: 'OverallStatusCriticality' }]       
+  }  
+  OverallStatus;
+  @UI.hidden: true
+  OverallStatusCriticality;
+  @UI.hidden: true
+  LocalCreatedBy;
+  @UI.hidden: true
+  LocalCreatedAt;
+  @UI.hidden: true
+  LocalLastChangedBy;
+  @UI.hidden: true
+  LocalLastChangedAt;
+  @UI.hidden: true
+  LastChangedAt;
+}

@@ -1,0 +1,45 @@
+projection;
+strict ( 2 );
+use draft;
+use side effects;
+
+define behavior for ZC_TRAVEL_428CMR alias Travel
+{
+  use create;
+  use update;
+  use delete;
+
+  use action Edit;
+  use action Activate;
+  use action Discard;
+  use action Resume;
+  use action Prepare;
+
+  use action acceptTravel;
+  use action rejectTravel;
+
+  use action validateAgencyID;
+  use action validateCustomerID;
+  use action validateDateRange;
+  use action validateBookingFeeValue;
+
+  use association _Booking { create; with draft; }
+}
+
+define behavior for ZC_BOOKING_428CMR alias Booking
+{
+  use update;
+  use delete;
+
+  use association _Travel { with draft; }
+  use association _BookingSupplement { create;  with draft; }
+}
+
+define behavior for ZC_BSUPPL_428CMR alias BookingSupplement
+{
+  use update;
+  use delete;
+
+  use association _Travel { with draft; }
+  use association _Booking { with draft; }
+}
