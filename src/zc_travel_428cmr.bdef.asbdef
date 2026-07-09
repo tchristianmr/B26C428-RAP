@@ -23,6 +23,8 @@ define behavior for ZC_TRAVEL_428CMR alias Travel
   use action validateDateRange;
   use action validateBookingFeeValue;
 
+  use action deductDiscount;
+
   use association _Booking { create; with draft; }
 }
 
@@ -30,6 +32,10 @@ define behavior for ZC_BOOKING_428CMR alias Booking
 {
   use update;
   use delete;
+
+  use action validateCustomerID;
+  use action validateConnectionValues;
+  use action validatePrice;
 
   use association _Travel { with draft; }
   use association _BookingSupplement { create;  with draft; }

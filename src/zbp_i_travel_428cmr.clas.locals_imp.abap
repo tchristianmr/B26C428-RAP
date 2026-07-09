@@ -29,8 +29,12 @@ CLASS lhc_Travel DEFINITION INHERITING FROM cl_abap_behavior_handler.
 
     METHODS validateDates FOR VALIDATE ON SAVE
       IMPORTING keys FOR Travel~validateDates.
+
     METHODS validateBookingFee FOR VALIDATE ON SAVE
       IMPORTING keys FOR Travel~validateBookingFee.
+
+    METHODS deductDiscount FOR MODIFY
+      IMPORTING keys FOR ACTION Travel~deductDiscount RESULT result.
 
     CONSTANTS: BEGIN OF travel_status,
                  open     TYPE c LENGTH 1 VALUE 'O',
@@ -71,12 +75,19 @@ CLASS lhc_Travel IMPLEMENTATION.
                                               %action-acceptTravel = COND #( WHEN travel-OverallStatus = travel_status-accepted
                                                                              THEN if_abap_behv=>fc-o-disabled
                                                                              ELSE if_abap_behv=>fc-o-enabled )
-                                                %action-rejectTravel = COND #( WHEN travel-OverallStatus = travel_status-rejected
-                                                                               THEN if_abap_behv=>fc-o-disabled
-                                                                               ELSE if_abap_behv=>fc-o-enabled )
-                                                %assoc-_Booking = COND #(   WHEN travel-OverallStatus = travel_status-rejected
-                                                                            THEN if_abap_behv=>fc-o-disabled
-                                                                            ELSE if_abap_behv=>fc-o-enabled ) ) ).
+                                              %action-rejectTravel = COND #( WHEN travel-OverallStatus = travel_status-rejected
+                                                                             THEN if_abap_behv=>fc-o-disabled
+                                                                             ELSE if_abap_behv=>fc-o-enabled )
+                                             %assoc-_Booking = COND #( WHEN travel-OverallStatus = travel_status-rejected
+                                                                       THEN if_abap_behv=>fc-o-disabled
+                                                                       ELSE if_abap_behv=>fc-o-enabled )
+
+                                             %action-deductDiscount = COND #( WHEN travel-%is_draft = if_abap_behv=>mk-off AND
+                                                                            ( travel-OverallStatus = travel_status-open OR
+                                                                              travel-OverallStatus = travel_status-rejected )
+                                                                              THEN if_abap_behv=>fc-o-enabled
+                                                                              ELSE if_abap_behv=>fc-o-disabled ) ) ).
+
   ENDMETHOD.
 
   METHOD setTravelNumber.
@@ -339,6 +350,79 @@ CLASS lhc_Travel IMPLEMENTATION.
                         %element-BookingFee = if_abap_behv=>mk-on ) TO reported-travel.
       ENDIF.
     ENDLOOP.
+
+  ENDMETHOD.
+
+  METHOD deductDiscount.
+*  06.07.2026: Deduct the discount from the booking fee when saving a travel
+    DATA travels_for_update TYPE TABLE FOR UPDATE zi_travel_428cmr.
+    DATA(keys_with_valid_discount) = keys.
+
+    LOOP AT keys_with_valid_discount ASSIGNING FIELD-SYMBOL(<key_invalid>)
+                                         WHERE %param-discount_percent IS INITIAL
+                                            OR %param-discount_percent > 100
+                                            OR %param-discount_percent <= 0.
+
+      APPEND VALUE #( %tky = <key_invalid>-%tky ) TO failed-travel.
+
+      APPEND VALUE #( %tky = <key_invalid>-%tky
+                      %msg = NEW /dmo/cm_flight_messages( textid = /dmo/cm_flight_messages=>discount_invalid
+                                                          severity = if_abap_behv_message=>severity-error )
+                     %element-BookingFee = if_abap_behv=>mk-on
+                     %op-%action-deductDiscount = if_abap_behv=>mk-on ) TO reported-travel.
+
+      DELETE keys_with_valid_discount.
+    ENDLOOP.
+
+    CHECK keys_with_valid_discount IS NOT INITIAL.
+
+    READ ENTITIES OF zi_travel_428cmr IN LOCAL MODE
+           ENTITY Travel
+           FIELDS ( BookingFee )
+             WITH CORRESPONDING #( keys_with_valid_discount )
+           RESULT DATA(travels).
+
+    LOOP AT travels ASSIGNING FIELD-SYMBOL(<travel>).
+*     08.07.2026: Deduct the discount from the booking fee
+      DATA(ls_param) = keys_with_valid_discount[ KEY id %tky = <travel>-%tky ]-%param.
+*      DATA percentage TYPE decfloat16.
+      DATA(percentage) = CONV decfloat16( ls_param-discount_percent / 100 ).
+
+*     08.07.2026: Add Adjustment Percentage based on Adjustment Type (D = Discount, A = Adjustment)
+      DATA(amount) = <travel>-BookingFee * percentage.
+      IF ls_param-discount_type = 'A'.
+        DATA(new_fee) = <travel>-BookingFee + amount.
+      ELSE.
+        new_fee = <travel>-BookingFee - amount.
+      ENDIF.
+
+      APPEND VALUE #( %tky = <travel>-%tky BookingFee = new_fee ) TO travels_for_update.
+*      DATA(discount_percent) = keys_with_valid_discount[ KEY id %tky = <travel>-%tky ]-%param-discount_percent.
+*      percentage = discount_percent / 100.
+*      DATA(reduced_fee) = <travel>-BookingFee * ( 1 - percentage ).
+
+*      APPEND VALUE #( %tky = <travel>-%tky
+*                      BookingFee = reduced_fee ) TO travels_for_update.
+    ENDLOOP.
+
+    MODIFY ENTITIES OF zi_travel_428cmr IN LOCAL MODE
+        ENTITY Travel
+        UPDATE FIELDS ( BookingFee )
+        WITH travels_for_update.
+
+    READ ENTITIES OF zi_travel_428cmr IN LOCAL MODE
+        ENTITY Travel
+        ALL FIELDS WITH CORRESPONDING #( keys_with_valid_discount )
+        RESULT DATA(travels_after).
+
+* 08.07.2026: Mapping the result from database table already in memory
+    result = VALUE #( FOR travel IN travels
+                      LET updated_fee = travels_for_update[ %tky = travel-%tky ]-BookingFee
+                       IN ( %tky = travel-%tky
+                            %param = VALUE #( BASE travel BookingFee = updated_fee ) ) ).
+
+*    result = VALUE #( FOR travel IN travels_after ( %tky = travel-%tky
+*                                                    %param = travel ) ).
 
   ENDMETHOD.
 

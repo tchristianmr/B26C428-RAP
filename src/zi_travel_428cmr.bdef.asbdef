@@ -33,6 +33,7 @@ etag master LocalLastChangedAt
 
   action ( features : instance ) acceptTravel result [1] $self;
   action ( features : instance ) rejectTravel result [1] $self;
+  action ( features : instance ) deductDiscount parameter ZA_TRAVEL_DISCOUNT_428CMR result [1] $self;
 
   validation validateAgency on save { create; field AgencyID; }
   determine action validateAgencyID { validation validateAgency; }
@@ -90,11 +91,41 @@ lock dependent by _Travel
 authorization dependent by _Travel
 etag master LocalLastChangedAt
 {
+
   update;
   delete;
-
   field ( readonly, numbering : managed ) BookingUUID;
-  field ( readonly ) TravelUUID, BookingID, LocalLastChangedAt;
+  field ( readonly )
+  TravelUUID,
+  BookingID,
+  BookingDate,
+  BookingStatus,
+  LocalLastChangedAt;
+
+  field ( mandatory )
+  CustomerID,
+  AirlineID,
+  ConnectionID,
+  FlightDate;
+
+  determination setBookingNumber on save { create; }
+  determination setBookingDate on save { create; }
+  determination setInitialStatusBooking on modify { create; }
+
+  validation validateCustomer    on save { create; field CustomerID; }
+  determine action validateCustomerID { validation validateCustomer; }
+
+  validation validateConnection  on save { create; field AirlineID, ConnectionID, FlightDate; }
+  determine action validateConnectionValues { validation validateConnection; }
+
+  validation validateFlightPrice on save { create; field FlightPrice; }
+  determine action validatePrice { validation validateFlightPrice; }
+
+  side effects {
+      determine action validateCustomerID       executed on field CustomerID  affects messages;
+      determine action validateConnectionValues executed on field AirlineID, field ConnectionID, field FlightDate affects messages;
+      determine action validatePrice            executed on field FlightPrice affects messages;
+  }
 
   association _Travel { with draft;}
   association _BookingSupplement { create; with draft; }
